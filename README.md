@@ -1,152 +1,51 @@
 # Distributed Mesh Network Communication Spec
 
-This document defines the DistNet protocol model used by MeshArranger and the host-facing command surface exposed through the DistNet gateway.
-
 ## Scope
 
-The specification covers two operating domains:
+This spec defines a distributed mesh communication style for:
 
-1. Intra-robot mesh: sensors, actuators, and compute nodes auto-discover each other and bind to capabilities.
-2. Field mesh: robot gateway nodes expose selected capabilities to other robots and fixed field infrastructure.
+1. Intra-robot auto-discovery of component parts (sensors, motors, actuators, controllers).
+2. Inter-robot and field-level discovery/communication on a shared playing field.
 
-### Robot auto-discovering components through the mesh
+### Robot auto discovering its own capibilities via the mesh network
 
-<img src="./design/RobotWithSensors2.png" alt="Robot auto discovering its own components" width="400">
+<img src="./design/RobotWithSensors2.png" alt="Robot auto discovering its own components" width="400" >
 
-### Robot and field-level discovery in shared space
+### Robot discovering where it is in the global
+space along with other sensors in that space
 
-<img src="./design/RobotField.png" alt="Robot discovering field components" width="400">
-
-## DistNet Gateway Alignment
-
-The host-accessible command surface in this repository is the DistNet gateway REST API (see `DistNetGtwy/spec/api.md` and `DistNetGtwy/README.md`).
-
-- Base URL: `http://mesh-gateway.local:8080`
-- Device static IP: `192.168.137.2/24`
-- Host static IP: `192.168.137.1/24`
-- mDNS hostname: `mesh-gateway.local`
-- Supported endpoints:
-  - `GET /health`
-  - `POST /echo`
-  - `POST /command`
-- Supported `cmd` values in `POST /command`:
-  - `status`
-  - `echo`
-
-## Quick Commands (Spec-Accurate)
-
-### 1) Health check
-
-```bash
-curl -s http://mesh-gateway.local:8080/health
-```
-
-Expected shape:
-
-```json
-{
-  "ok": true,
-  "service": "mesh-gateway",
-  "version": "1.0.0"
-}
-```
-
-### 2) Status command via `/command`
-
-```bash
-curl -s -X POST http://mesh-gateway.local:8080/command \
-  -H 'Content-Type: application/json' \
-  -d '{"cmd":"status","args":{}}'
-```
-
-Expected shape:
-
-```json
-{
-  "ok": true,
-  "result": {
-    "uptime_ms": 12345,
-    "ip": "192.168.137.2",
-    "hostname": "mesh-gateway.local"
-  }
-}
-```
-
-### 3) Echo command via `/echo`
-
-```bash
-curl -s -X POST http://mesh-gateway.local:8080/echo \
-  -H 'Content-Type: application/json' \
-  -d '{"message":"hello"}'
-```
-
-### 4) Echo command via `/command`
-
-```bash
-curl -s -X POST http://mesh-gateway.local:8080/command \
-  -H 'Content-Type: application/json' \
-  -d '{"cmd":"echo","args":{"message":"hello"}}'
-```
-
-### 5) Unknown command handling
-
-```bash
-curl -s -X POST http://mesh-gateway.local:8080/command \
-  -H 'Content-Type: application/json' \
-  -d '{"cmd":"not_real","args":{}}'
-```
-
-Expected shape:
-
-```json
-{
-  "ok": false,
-  "error": "unknown_command",
-  "cmd": "not_real"
-}
-```
-
-### 6) CLI helper commands
-
-`DistNetGtwy/tools/gatewayctl.py` wraps the same contract:
-
-```bash
-python3 DistNetGtwy/tools/gatewayctl.py health
-python3 DistNetGtwy/tools/gatewayctl.py status
-python3 DistNetGtwy/tools/gatewayctl.py echo "hello"
-python3 DistNetGtwy/tools/gatewayctl.py call echo --args '{"message":"hello"}'
-```
+<img src="./design/RobotField.png" alt="Robot auto discovering its own components" width="400" >
 
 ## Goals
 
-- Zero manual wiring of component relationships at startup.
-- Fast discovery and re-discovery after reset, disconnect, or brownout.
-- Stable capability naming (bind by service, not by address).
-- Consistent behavior from robot-internal to field-wide deployments.
-- Compact message envelopes for constrained wireless links.
+- Zero-manual wiring of component relationships at startup.
+- Fast discovery and re-discovery of devices after resets or disconnects.
+- Stable service naming so nodes can find capabilities, not hardcoded addresses.
+- Consistent protocol behavior from single-robot mesh to field-wide mesh.
+- Bounded message size suitable for low-bandwidth wireless links.
 
 ## Terms
 
-- Node: any participant in the mesh (sensor, actuator, controller, compute unit, robot gateway, or field beacon).
-- Service: a capability provided by a node (for example `imu.attitude`, `motor.set_rpm`, `field.zone_state`).
-- Service key: compact identifier derived from canonical service name and major version.
-- Robot mesh: all nodes physically belonging to one robot.
-- Field mesh: robot gateways plus other robots and field infrastructure.
+- **Node**: Any network participant (sensor, motor controller, actuator, compute unit, full robot controller, or field beacon).
+- **Service**: A capability exposed by a node (for example:`imu.attitude`,`motor.set_rpm`,`field.zone_state`).
+- **Service Key**: Compact ID derived from canonical service name and major version.
+- **Robot Mesh**: Mesh made from all nodes physically belonging to one robot.
+- **Field Mesh**: Mesh made from robot-level nodes plus fixed field sensors/infrastructure.
 
 ## Network Model
 
-- Topology: peer mesh with no mandatory always-on coordinator.
+- Topology: Distributed peer mesh, no single mandatory coordinator.
 - Addressing:
-  - `node_id`: globally unique node identifier.
-  - `robot_id`: identifier shared by components from one robot.
-  - `field_id`: identifier for the current match/field context.
+  - `node_id`: globally unique per node.
+  - `robot_id`: shared by components belonging to same robot.
+  - `field_id`: identifies match/field context.
 - Discovery domains:
-  - Local domain: robot-internal traffic and bindings.
-  - Field domain: robot gateway plus external robots/field nodes.
+  - **Local domain**: robot-internal traffic.
+  - **Field domain**: robot gateway + external robots + field nodes.
 
 ## Service Identity
 
-Canonical service naming:
+Each service is named canonically:
 
 - `<domain>/<service_name>:<major_version>`
 
@@ -156,105 +55,116 @@ Examples:
 - `act/motor.set_rpm:1`
 - `field/zone_occupancy:1`
 
-Each service name maps to a deterministic 16-bit `service_key` used for compact advertisements and lookups.
+A `service_key` is generated from canonical name using a deterministic 16-bit hash. Nodes use `service_key` for compact advertisements and matching.
 
-## Protocol Envelope
+## Message Families
 
-All mesh messages use a fixed-size header and typed payload body (TLV or equivalent compact encoding).
+All messages use a small fixed header plus TLV payload.
 
-Required header fields:
+Header (required):
 
 - `proto_ver`
 - `msg_type`
 - `src_node_id`
-- `dst_node_id` (or broadcast address)
+- `dst_node_id` (or broadcast)
 - `seq`
 - `timestamp_ms`
 
-## Core Message Families
+Core message types:
 
-- `HELLO`: periodic node presence and compact capability summary.
+- `HELLO`: periodic presence + capability summary.
 - `WHO_HAS`: request providers for one or more service keys.
-- `I_HAVE`: response listing matching providers.
+- `I_HAVE`: response with matching service providers.
 - `DESCRIBE_NODE`: request full node profile.
 - `NODE_PROFILE`: full profile response.
-- `DESCRIBE_SERVICE`: request a service schema/contract.
-- `SERVICE_DESC`: service schema response.
-- `PUBLISH`: telemetry/event publication.
-- `CALL`: request/command invocation.
-- `RESULT`: response to `CALL`.
-- `PING` / `PONG`: liveness verification.
-- `BYE`: graceful leave/disconnect.
+- `DESCRIBE_SERVICE`: request detailed service schema.
+- `SERVICE_DESC`: detailed service response.
+- `PUBLISH`: telemetry/event data.
+- `CALL`: command/RPC invoke.
+- `RESULT`: command/RPC response.
+- `PING` /`PONG`: liveness check.
+- `BYE`: graceful leave.
 
 ## Capability Advertisement Contract
 
-`HELLO` must remain compact and cacheable. It includes:
+`HELLO` contains a compact summary only:
 
-- `node_id`, `robot_id`, `role`, `health`
-- `provides[]`, each entry containing:
+- `node_id`,`robot_id`,`role`,`health`
+- `provides[]`: list of
   - `service_key`
-  - `service_class` (`sensor`, `actuator`, `compute`, `field`)
-  - `confidence` (`0-100`)
+  - `service_class` (`sensor`,`actuator`,`compute`,`field`)
+  - `confidence` (0-100)
   - `qos_flags`
-- `profile_hash` for validating cached `NODE_PROFILE` data
+- `profile_hash`: hash of full node profile for cache validation
 
-Design intent:
+Rationale:
 
-- Keep recurring network cost low.
-- Support fast matching for dependencies.
-- Defer large metadata transfer until explicitly requested.
+- Keeps periodic traffic lightweight.
+- Enables fast capability matching.
+- Full profile fetched only when needed.
 
 ## Full Node Profile (On Demand)
 
-Retrieved via `DESCRIBE_NODE` and returned as `NODE_PROFILE`.
+Fetched through `DESCRIBE_NODE` / `NODE_PROFILE`.
 
-Expected profile content:
+Includes:
 
-- hardware identity (model, serial, firmware)
-- mount/frame metadata for spatial devices
-- units, scaling, and normalization rules
-- accuracy, covariance, and calibration state
-- supported commands and operational limits
-- rate/timing guarantees
-- safety state model and fault semantics
+- Hardware identity (model, serial, firmware)
+- Coordinate frame/mount metadata (if sensor/actuator is spatial)
+- Units and scaling
+- Accuracy, covariance, calibration status
+- Supported command set and limits
+- Update rates and timing guarantees
+- Safety state and fault semantics
 
-## Discovery and Binding Flow (Single Robot)
+## Use Case 1: Single Robot Auto-Discovery
 
-1. Node boots and enters `DISCOVERING`.
-2. Node broadcasts `HELLO`.
-3. Peers cache summary and check dependency set.
-4. Missing dependency triggers `WHO_HAS(service_key...)`.
-5. Providers answer with `I_HAVE`.
-6. Requestor ranks candidates by trust, health, confidence, freshness, then latency.
-7. If necessary, requestor fetches `NODE_PROFILE` for compatibility checks.
-8. Node transitions to `OPERATIONAL` when required dependencies are bound.
+Image reference: `design/RobotWithSensors.png`
 
-Failure path:
+### Behavior
 
-- Missed `HELLO` window triggers `PING` retries.
-- Dependency timeout removes binding.
-- Node re-enters discovery and issues fresh `WHO_HAS`.
-- If required minimum is not satisfied, node emits a minimum-dependency failure event and enters `DEGRADED`.
+1. Node boots and broadcasts`HELLO`.
+2. Nodes listen for`HELLO` from peers in same`robot_id`.
+3. If required dependency is missing, node sends`WHO_HAS(service_key)`.
+4. Provider replies with`I_HAVE`.
+5. Node selects best provider by health + confidence + freshness.
+6. Node requests`NODE_PROFILE` if deeper compatibility check is needed.
+7. Node transitions to`OPERATIONAL` when minimum dependency set is satisfied.
 
-## Multi-Robot + Field Flow
+### Failure/Reconfiguration
 
-1. Each robot forms an internal mesh using the same process above.
-2. Robot gateway exports selected services to the field domain.
-3. Field infrastructure advertises official services (time, localization beacons, zone/game state, etc.).
-4. Robots discover peer robot services and field services.
-5. Export policy enforces visibility boundaries.
+- Missed heartbeats trigger`PING` retries.
+- Provider timeout removes dependency binding.
+- Node re-enters discovery and issues`WHO_HAS`.
+- If minimum required dependencies are not met, node publishes`MIN_DEP_FAIL` event.
 
-Domain split:
+## Use Case 2: Multi-Robot + Field Mesh
 
-- Robot-internal domain: high-rate telemetry and actuator paths.
-- Field domain: bounded, policy-filtered, match-relevant data only.
+Image reference: `design/RobotField.png`
 
-## Node Lifecycle State Machine
+### Behavior
 
-States:
+1. Each robot internally forms a robot mesh as in Use Case 1.
+2. A robot gateway node advertises robot-level services into field domain.
+3. Field infrastructure nodes advertise services (timing, localization beacons, zone state, game-state sensors).
+4. Robots discover:
+   - Other robot-level services (peer awareness, coordination channels).
+   - Field services (official field telemetry).
+5. Policy decides visibility:
+   - Internal robot-only services stay local.
+   - Shareable services are exported to field domain.
+
+### Domain Separation
+
+- **Robot-internal domain**: high-rate component telemetry and actuator control.
+- **Field domain**: bounded, policy-filtered, match-relevant data only.
+
+## State Machine
+
+Node lifecycle states:
 
 - `BOOT`
-- `UNPROVISIONED` (optional)
+- `UNPROVISIONED` (optional, requests config)
 - `DISCOVERING`
 - `BINDING`
 - `OPERATIONAL`
@@ -264,52 +174,51 @@ States:
 Required transitions:
 
 - `BOOT -> DISCOVERING`
-- `DISCOVERING -> BINDING` when candidates are available
-- `BINDING -> OPERATIONAL` when required dependencies are satisfied
-- `OPERATIONAL -> DEGRADED` when a critical dependency is lost
-- `DEGRADED -> OPERATIONAL` when rebind succeeds
+- `DISCOVERING -> BINDING` when candidate providers found
+- `BINDING -> OPERATIONAL` when minimum dependencies met
+- `OPERATIONAL -> DEGRADED` when critical dependency lost
+- `DEGRADED -> OPERATIONAL` after rebind success
 
 ## Reliability and Timing
 
-- `HELLO` interval: `250-1000 ms` depending on profile.
-- Dependency timeout: `3x` expected `HELLO` interval.
-- `CALL`/`RESULT` retry policy is service-class specific.
-- Sequence numbers reject stale and duplicate payloads.
+- `HELLO` interval: 250-1000 ms (profile dependent).
+- Dependency timeout: 3x expected`HELLO` interval.
+- `CALL`/`RESULT` timeout and retry policy configurable per service class.
+- Sequence numbers used for duplicate and stale message rejection.
 
 ## Security and Safety
 
-- Trust check (signed identity or trusted allow-list) required before binding critical control paths.
-- Authorization policy:
-  - Internal actuator control requires trusted role.
-  - Field-domain feeds default to read-only unless explicitly enabled.
+- Signed node identity (or pre-shared trust list) required before binding critical control paths.
+- Service authorization policy:
+  - Robot-internal actuator commands require trusted role.
+  - Field-domain data treated as read-only unless explicitly permitted.
 - Safety interlocks:
-  - reject out-of-range commands
-  - enter safe mode on repeated auth failures or malformed command envelopes
+  - Reject commands outside declared limits.
+  - Enter safe mode on repeated auth failures or invalid command envelopes.
 
 ## Data Model Requirements
 
-Each service descriptor must define:
+Each service descriptor must declare:
 
 - `service_key`
-- canonical name + major version
-- direction (`publish`, `callable`, or both)
+- canonical name and version
+- direction (`publish`,`callable`, or both)
 - payload schema reference
-- units and valid ranges
-- min/max update rates
-- fault code set
+- units
+- min/max rate
+- fault codes
 
 ## Acceptance Criteria
 
-- A new robot node joins without manual address configuration.
-- Removing and restoring a non-critical node does not prevent operation.
-- Multiple robots coexist without service-key collision ambiguity.
-- Field services are discovered and consumed within bounded latency.
-- Internal-only services are not exposed to unauthorized field peers.
+- New sensor node can be added to a robot and become discoverable without manual address configuration.
+- Robot remains operational if a non-critical node is removed and re-added.
+- Multiple robots can coexist in field mesh without service key collisions causing control ambiguity.
+- Field-provided services can be discovered and consumed by robots within bounded latency.
+- Internal-only robot services are not exposed to unauthorized field peers.
 
 ## Implementation Notes
 
-- Keep periodic advertisements compact and deterministic.
-- Pull profile/service detail only when the cache hash changes.
-- Cache profile by `node_id + profile_hash`.
-- Increase major version on incompatible payload or behavior changes.
-- Gateway REST API is currently a minimal command bridge; extend `/command` with new `cmd` values as DistNet features are promoted to host-facing operations.
+- Keep periodic advertisements compact; fetch detail on demand.
+- Prefer deterministic service selection (rank by trust, health, confidence, then latency).
+- Maintain profile cache keyed by`node_id + profile_hash`.
+- Versioning rule: bump major when payload compatibility breaks.
