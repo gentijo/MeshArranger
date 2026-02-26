@@ -1,0 +1,7 @@
+{
+  "urls": [
+    ["micropyserver/utils.py", "github:ROSMicroPy/rmp_pylib-micropyserver/utils.py"],
+    ["micropyserver/micropyserver.py", "github:ROSMicroPy/rmp_pylib-micropyserver/micropyserver.py"]
+  ],
+  "version": "0.1"
+}
