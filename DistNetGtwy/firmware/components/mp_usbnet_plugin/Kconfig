@@ -1,5 +1,19 @@
 menu "MicroPython USB Network Plugin"
 
+choice MP_USBNET_USB_CLASS
+    prompt "USB network class"
+    default MP_USBNET_USB_CLASS_ECM
+    help
+        Select the USB NIC function type presented to the host.
+
+config MP_USBNET_USB_CLASS_ECM
+    bool "CDC-ECM (Linux/macOS friendly)"
+
+config MP_USBNET_USB_CLASS_RNDIS
+    bool "RNDIS (Windows compatibility)"
+
+endchoice
+
 config MP_USBNET_DEFAULT_HOSTNAME
     string "Default mDNS hostname"
     default "mesh-gateway"

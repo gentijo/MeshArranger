@@ -1,0 +1,15 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "usb_descriptors.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        mp_usbnet_plugin
+        esp_netif
+        esp_event
+        nvs_flash
+        esp_hw_support
+        usb
+    WHOLE_ARCHIVE
+)

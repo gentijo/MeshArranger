@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "mp_usbnet.c"
         "usb_netif_glue.c"
+        "usb_netif_port.c"
     INCLUDE_DIRS
         "include"
     REQUIRES
