@@ -1,6 +1,6 @@
 {
   "urls": [
-    ["distnet", "github:WidgetMesh/MeshArranger/DistNet/MainBot.py"]
+    ["distnet", "github:/WidgetMesh/MeshArranger/DistNet/MainBot.py"]
    ],
   "version": "0.2"
 }
