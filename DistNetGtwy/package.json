@@ -1,6 +1,6 @@
 {
   "urls": [
-    ["distnet/MainBot.py", "github:WidgetMesh/MeshArranger/DistNet/MainBot.py",  target="/"]
+    ["/distnet/MainBot.py", "github:WidgetMesh/MeshArranger/DistNet/MainBot.py"]
    ],
   "deps": [
     ["github:ROSMicroPy/rmp_pylib-micropyserver/package.json"]  
