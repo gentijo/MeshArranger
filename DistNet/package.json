@@ -1,6 +1,6 @@
 {
   "urls": [
-    ["signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/DistNet/DistNet/LighthouseMesh.py"]
+    ["signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/LighthouseMesh.py"]
   ],
   "version": "0.7"
 }
