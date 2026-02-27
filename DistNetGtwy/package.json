@@ -2,6 +2,6 @@
   "name": "DistNetGtwy",
   "version": "1.0",
   "deps": [
-    ["github:WidgetMesh/MeshArranger/DistNet"]
+    ["github:WidgetMesh/MeshArranger/DistNet", "main"]
   ]
 }
