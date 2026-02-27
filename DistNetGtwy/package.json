@@ -2,7 +2,6 @@
   "name": "DistNetGtwy",
   "version": "1.0",
   "deps": [
-    ["distnwet", "github:john/robot-bus"],
-    ["math-utils", "https://example.com/mip/math-utils"]
+    ["github:WidgetMesh/MeshArranger/DistNet"]
   ]
 }
