@@ -3,6 +3,6 @@
   "version": "1.0",
     "urls": [
     ["signalling/Payload.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/Payload.py"],
-    ["distnet", "github:WidgetMesh/MeshArranger/DistNet/package.json"]
+    [ "github:WidgetMesh/MeshArranger/DistNet/package.json"]
   ]
 }
