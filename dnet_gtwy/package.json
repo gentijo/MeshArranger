@@ -1,10 +1,8 @@
 {
   "name": "DistNet",
   "urls": [
-    ["dnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/dnet/signalling/Payload.py"],
-    ["dnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/dnet/signalling/LighthouseMesh.py"],
-    ["dnet/__init__.py", "github:WidgetMesh/MeshArranger/dnet/__init__.py"]  
-
+    ["dnet_gtwy/__init__.py", "github:WidgetMesh/MeshArranger/dnet_gtwy/__init__.py"],
+    ["dnet_gtwy/rest_server.py", "github:WidgetMesh/MeshArranger/dnet_gtwy/app/rest_server.py"]  
   ],
   "version": "0.7"
 }

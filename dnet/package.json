@@ -1,9 +1,9 @@
 {
   "name": "Distributed Node Network",
   "urls": [
-    ["dnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/Payload.py"],
-    ["dnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/LighthouseMesh.py"],
-    ["dnet/__init__.py", "github:WidgetMesh/MeshArranger/DistNet/__init__.py"]  
+    ["dnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/dnet/signalling/Payload.py"],
+    ["dnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/dnet/signalling/LighthouseMesh.py"],
+    ["dnet/__init__.py", "github:WidgetMesh/MeshArranger/dnet/__init__.py"]  
 
   ],
   "version": "0.7"
