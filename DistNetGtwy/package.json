@@ -2,9 +2,6 @@
   "name": "DistNetGtwy",
   "version": "1.0",
     "urls": [
-    ["signalling/Payload.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/Payload.py"]
-  ],
-  "deps": [
-    ["github:WidgetMesh/MeshArranger/DistNet", "main"]
+
   ]
 }
