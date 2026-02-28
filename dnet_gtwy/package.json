@@ -1,0 +1,10 @@
+{
+  "name": "DistNet",
+  "urls": [
+    ["dnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/Payload.py"],
+    ["dnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/LighthouseMesh.py"],
+    ["dnet/__init__.py", "github:WidgetMesh/MeshArranger/DistNet/__init__.py"]  
+
+  ],
+  "version": "0.7"
+}
