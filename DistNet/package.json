@@ -2,7 +2,7 @@
   "name": "DistNet",
   "urls": [
     ["distnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/Payload.py"],
-    ["distnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/LighthouseMesh.py"]  
+    ["distnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/DistNet/signalling/LighthouseMesh.py"],
     ["distnet/__init__.py", "github:WidgetMesh/MeshArranger/DistNet/__init__.py"]  
 
   ],
