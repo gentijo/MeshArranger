@@ -5,7 +5,7 @@ import ubinascii
 import json
 import time
         
-from signalling.Payload import Payload
+from distnet.signalling.Payload import Payload
 
 class LighthouseMesh():
     BROADCAST_TARGET = const(b'\xff\xff\xff\xff\xff\xff')
