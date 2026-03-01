@@ -20,7 +20,10 @@ except:
     try:
         print("Installing dnet")
         mip.install("github:WidgetMesh/MeshArranger/dnet", version="Packaging")
-        import MicroPyServer
+        import dnet
         gc.collect()
     except:
         print("ERROR: Unable to load MicroPyServer base class")
+
+from dnet.signalling.LighthouseMesh import LighthouseMesh
+from dnet.signalling.Payload import Payload
