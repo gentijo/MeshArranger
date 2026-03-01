@@ -29,7 +29,7 @@ class LighthouseMesh():
         self.wlan_sta = network.WLAN(network.STA_IF)  # Or network.AP_IF
         self.wlan_sta.active(True)
         self.wlan_mac = self.wlan_sta.config('mac')
-        self.wlan_sta.config()  # Set channel explicitly if packets are not delivered
+        #self.wlan_sta.config()  # Set channel explicitly if packets are not delivered
         self.wlan_sta.disconnect()      # For ESP8266
 
         self.espnow = aioespnow.AIOESPNow()  
@@ -39,7 +39,7 @@ class LighthouseMesh():
         self.peer1 = b'\x80\x65\x99\xdd\x48\xf4'
         self.peer2 = b'\xf4\x12\xfa\xce\xee\x18'
 
-        if wlan_mac == self.peer1:
+        if self.wlan_mac == self.peer1:
             self.peer = self.peer2
         elif self.wlan_mac == self.peer2:
             self.peer = self.peer1
