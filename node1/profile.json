@@ -1,0 +1,38 @@
+{
+  "v": 1,
+  "t": "p",
+  "n": "a1b2c3d4",
+  "h": "servo-dist-v1",
+  "name": "servo-distance-node",
+  "role": "actuator_sensor",
+  "fw": "1.2.0",
+  "s": [
+    {
+      "sid": 1201,
+      "name": "act/servo.set_angle:1",
+      "class": "actuator",
+      "endpoint": "set_angle",
+      "in": {
+        "angle_deg": {"type": "int", "min": 0, "max": 180},
+        "speed_dps": {"type": "int", "min": 10, "max": 720, "default": 180}
+      },
+      "out": {"ok": "bool", "applied_angle_deg": "int"}
+    },
+    {
+      "sid": 2201,
+      "name": "sense/distance.read_mm:1",
+      "class": "sensor",
+      "endpoint": "read_mm",
+      "in": {},
+      "out": {
+        "distance_mm": {"type": "int", "min": 20, "max": 4000},
+        "quality": {"type": "int", "min": 0, "max": 100}
+      },
+      "rate_hz": 20
+    }
+  ],
+  "meta": {
+    "bus": "i2c",
+    "mount": "front_center"
+  }
+}
