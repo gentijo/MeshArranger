@@ -2,7 +2,7 @@
   "name": "Test node for dnet",
   "urls": [
     ["node1/demo.py", "github:WidgetMesh/MeshArranger/node1/demo.py"],
-    ["/profile.json", "github:WidgetMesh/MeshArranger/node1/profile.json"],
+    ["/profile.json", "github:WidgetMesh/MeshArranger/node1/profile.json"]
 
   ],
   "version": "0.102"
