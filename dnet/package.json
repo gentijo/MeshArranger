@@ -1,10 +1,18 @@
 {
   "name": "Distributed Node Network",
   "urls": [
-    ["dnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/dnet/signalling/Payload.py"],
-    ["dnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/dnet/signalling/LighthouseMesh.py"],
-    ["dnet/__init__.py", "github:WidgetMesh/MeshArranger/dnet/__init__.py"]  
+    ["dnet/__init__.py", "github:WidgetMesh/MeshArranger/dnet/code/__init__.py"],
+    ["dnet/signalling/__init__.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/__init__.py"],
+    ["dnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/Payload.py"],
+    ["dnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/LighthouseMesh.py"],
+    ["dnet/signalling/LighthouseTransport.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/LighthouseTransport.py"],
 
+    ["dnet/messaging/__init__.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/__init__.py"],
+    ["dnet/messaging/schema.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/schema.py"],
+    ["dnet/messaging/codec.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/codec.py"],
+    ["dnet/messaging/registry.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/registry.py"],
+    ["dnet/messaging/protocol.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/protocol.py"],
+    ["dnet/messaging/lighthouse_integration.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/lighthouse_integration.py"]
   ],
-  "version": "0.703"
+  "version": "0.706"
 }
