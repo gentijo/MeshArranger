@@ -6,7 +6,6 @@
     ["dnet/signalling/Payload.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/Payload.py"],
     ["dnet/signalling/LighthouseMesh.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/LighthouseMesh.py"],
     ["dnet/signalling/LighthouseTransport.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/LighthouseTransport.py"],
-
     ["dnet/messaging/__init__.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/__init__.py"],
     ["dnet/messaging/schema.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/schema.py"],
     ["dnet/messaging/codec.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/codec.py"],
