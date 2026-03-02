@@ -1,0 +1,7 @@
+{
+  "name": "Test node for dnet",
+  "urls": [
+    ["node1/main.py", "github:WidgetMesh/MeshArranger/node1/main.py"],
+  ],
+  "version": "0.100"
+}
