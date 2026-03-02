@@ -1,5 +1,5 @@
 {
-  "name": "Distributed Node Network",
+  "name": "distributed_node_network",
   "urls": [
     ["dnet/__init__.py", "github:WidgetMesh/MeshArranger/dnet/code/__init__.py"],
     ["dnet/signalling/__init__.py", "github:WidgetMesh/MeshArranger/dnet/code/signalling/__init__.py"],
