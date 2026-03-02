@@ -32,14 +32,10 @@ class LighthouseMesh:
         self._rx_queue = []
         self._max_rx_queue = 32
         self._rx_event = None
-        self.use_broadcast = bool(use_broadcast)
+        self.use_broadcast = True
         self.default_peer = self.BROADCAST_TARGET if self.use_broadcast else None
 
         self.add_peer(self.BROADCAST_TARGET)
-        for peer in peers or []:
-            self.add_peer(peer)
-            if not self.use_broadcast and self.default_peer is None:
-                self.default_peer = self.resolve_peer(peer)
 
         self._init_rx_event()
         self.enable_interrupt_rx()
