@@ -13,5 +13,5 @@
     ["dnet/messaging/protocol.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/protocol.py"],
     ["dnet/messaging/lighthouse_integration.py", "github:WidgetMesh/MeshArranger/dnet/code/messaging/lighthouse_integration.py"]
   ],
-  "version": "0.706"
+  "version": "0.710"
 }
