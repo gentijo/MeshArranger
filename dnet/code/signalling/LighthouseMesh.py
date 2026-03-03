@@ -44,11 +44,18 @@ class LighthouseMesh:
         return cls._instance
 
     def __init__(self, peers=None, debug=False):
+        # Mirror class constants onto the instance for MicroPython variants
+        # that don't reliably resolve class attributes via `self`.
+        self.BROADCAST_TARGET = b"\xff\xff\xff\xff\xff\xff"
+        self.ESPNOW_MAX_PAYLOAD_BYTES = 250
+        self._FRAG_MAGIC = b"\x7fM"
+        self._FRAG_VERSION = 1
+        self._FRAG_HEADER_BYTES = 7
+        self._FRAG_REASSEMBLY_TIMEOUT_MS = 30000
         self._logger = None
         self._debug = bool(debug)
         self._init_logger()
-        # Keep a concrete instance field for MicroPython variants where
-        # class-level const attributes are not resolved through instances.
+        # Keep a concrete instance field for compatibility with MicroPython.
         self._FRAG_PAYLOAD_MAX_BYTES = int(self.ESPNOW_MAX_PAYLOAD_BYTES) - int(self._FRAG_HEADER_BYTES)
         self._irq_count = 0
         self._irq_packets_drained = 0
