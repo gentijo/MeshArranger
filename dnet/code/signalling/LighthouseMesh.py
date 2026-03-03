@@ -47,6 +47,9 @@ class LighthouseMesh:
         self._logger = None
         self._debug = bool(debug)
         self._init_logger()
+        # Keep a concrete instance field for MicroPython variants where
+        # class-level const attributes are not resolved through instances.
+        self._FRAG_PAYLOAD_MAX_BYTES = int(self.ESPNOW_MAX_PAYLOAD_BYTES) - int(self._FRAG_HEADER_BYTES)
         self._irq_count = 0
         self._irq_packets_drained = 0
         self._fallback_recv_count = 0
