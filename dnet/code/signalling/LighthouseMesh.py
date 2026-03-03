@@ -298,7 +298,11 @@ class LighthouseMesh:
         for index in range(total):
             start = index * self._FRAG_PAYLOAD_MAX_BYTES
             end = start + self._FRAG_PAYLOAD_MAX_BYTES
+            if end > total: end=total
+
             part = payload[start:end]
+            self._log_debug(f"Start: {start} \r\nEnd:{end} \r\nmsgID:{msg_id} \r\nData:{part}")
+            
             header = bytes(
                 (
                     self._FRAG_MAGIC[0],
@@ -310,6 +314,10 @@ class LighthouseMesh:
                     index,
                 )
             )
+
+            self._log_debug(f"Header len {len(header)} Part len: {len(part)}")
+
+
             self.espnow.send(target, header + part)
         self._log_debug(
             "fragmented send target={} bytes={} chunks={}".format(
