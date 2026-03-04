@@ -134,7 +134,7 @@ class LighthouseMesh:
             if self.default_peer is None:
                 raise ValueError("peer is required when no default peer is configured")
             return self.default_peer
-        if peer in ("*", "broadcast"):
+        if isinstance(peer, str) and peer in ("*", "broadcast"):
             return self.BROADCAST_TARGET
         if isinstance(peer, str):
             return self.node_id_to_mac(peer)
@@ -431,9 +431,16 @@ class LighthouseMesh:
             return
         if self._rx_event is not None:
             try:
-                await self._rx_event.wait()
-                self._rx_event.clear()
-                return
+                # Do not block forever on IRQ event; if IRQ callbacks are not
+                # delivered on this port, timed-out waits allow recv polling.
+                if hasattr(asyncio, "wait_for_ms"):
+                    await asyncio.wait_for_ms(self._rx_event.wait(), poll_ms)
+                    self._rx_event.clear()
+                    return
+                if hasattr(asyncio, "wait_for"):
+                    await asyncio.wait_for(self._rx_event.wait(), poll_ms / 1000.0)
+                    self._rx_event.clear()
+                    return
             except Exception:
                 pass
         try:
