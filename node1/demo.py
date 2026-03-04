@@ -126,6 +126,11 @@ def on_message(peer_id, message):
 
 async def run():
     profile = load_profile()
+    _log_info(
+        "demo config channel={} advertise_s={} profile_s={}".format(
+            MESH_CHANNEL, ADVERTISE_INTERVAL_S, PROFILE_INTERVAL_S
+        )
+    )
     mesh = LighthouseMesh(debug=True, channel=MESH_CHANNEL)
     transport = mesh.create_transport(default_peer="broadcast")
     endpoint = MessagingEndpoint(node_id=mesh.node_id, transport=transport)
