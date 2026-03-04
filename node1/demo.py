@@ -16,6 +16,7 @@ from dnet.signalling.LighthouseMesh import LighthouseMesh
 
 PROFILE_PATH = "/lib/profile.json"
 BROADCAST_INTERVAL_S = 5
+MESH_CHANNEL = 6
 
 
 def _init_logger():
@@ -69,7 +70,7 @@ def on_message(peer_id, message):
 
 async def run():
     profile = load_profile()
-    mesh = LighthouseMesh(debug=True)
+    mesh = LighthouseMesh(debug=True, channel=MESH_CHANNEL)
     transport = mesh.create_transport(default_peer="broadcast")
     endpoint = MessagingEndpoint(node_id=mesh.node_id, transport=transport)
 

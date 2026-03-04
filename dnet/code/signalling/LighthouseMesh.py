@@ -33,6 +33,7 @@ class LighthouseMesh:
     _FRAG_HEADER_BYTES = const(7)
     _FRAG_PAYLOAD_MAX_BYTES = const(ESPNOW_MAX_PAYLOAD_BYTES - _FRAG_HEADER_BYTES)
     _FRAG_REASSEMBLY_TIMEOUT_MS = const(30000)
+    DEFAULT_CHANNEL = const(6)
 
     _instance = None
 
@@ -43,7 +44,7 @@ class LighthouseMesh:
             cls._initialized = False 
         return cls._instance
 
-    def __init__(self, peers=None, debug=False):
+    def __init__(self, peers=None, debug=False, channel=None):
         # Mirror class constants onto the instance for MicroPython variants
         # that don't reliably resolve class attributes via `self`.
         self.BROADCAST_TARGET = b"\xff\xff\xff\xff\xff\xff"
@@ -62,15 +63,14 @@ class LighthouseMesh:
         self._fallback_recv_count = 0
         self._fallback_empty_count = 0
 
+        if channel is None:
+            channel = int(self.DEFAULT_CHANNEL)
+        self._channel = int(channel)
+
         # Bring up STA mode so ESP-NOW can operate.
         self.wlan_sta = network.WLAN(network.STA_IF)
         self.wlan_sta.active(True)
-        # Optional: Disable power-saving mode for reliable reception
-        self.wlan_sta.config(pm=self.wlan_sta.PM_NONE) 
-
-        # 2. Set the desired channel (e.g., channel 6)  
-        # This command must be called BEFORE connecting to an AP if you are using one.
-        #self.wlan_sta.config(channel=6)
+        self._configure_wifi_for_espnow(self._channel)
         self.wlan_sta.disconnect()
 
         # Canonical node id is the local MAC as lowercase hex.
@@ -79,6 +79,7 @@ class LighthouseMesh:
         self._log_info(
             "mesh init node_id={} mac={}".format(self.node_id, self.mac_to_node_id(self.wlan_mac))
         )
+        self._log_info("mesh wifi channel={}".format(self._read_wifi_channel()))
         self._log_debug("mesh init debug={} peers_arg={}".format(self._debug, peers))
 
         # ESP-NOW transport endpoint.
@@ -439,6 +440,28 @@ class LighthouseMesh:
             await asyncio.sleep_ms(poll_ms)
         except AttributeError:
             await asyncio.sleep(poll_ms / 1000.0)
+
+    def _configure_wifi_for_espnow(self, channel):
+        """Set deterministic STA settings used by ESP-NOW."""
+        try:
+            pm_none = getattr(self.wlan_sta, "PM_NONE", None)
+            if pm_none is None:
+                pm_none = getattr(network.WLAN, "PM_NONE", None)
+            if pm_none is not None:
+                self.wlan_sta.config(pm=pm_none)
+        except Exception as exc:
+            self._log_debug("wifi pm config unavailable err={}".format(exc))
+        try:
+            self.wlan_sta.config(channel=int(channel))
+            self._log_info("wifi channel configured to {}".format(int(channel)))
+        except Exception as exc:
+            self._log_error("wifi channel config failed channel={} err={}".format(channel, exc))
+
+    def _read_wifi_channel(self):
+        try:
+            return self.wlan_sta.config("channel")
+        except Exception:
+            return "unknown"
 
     def _init_logger(self):
         if logging is None:
