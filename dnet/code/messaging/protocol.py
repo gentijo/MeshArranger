@@ -2,6 +2,11 @@ from . import schema
 from .codec import MessageCodec
 from .registry import ServiceRegistry
 
+try:
+    import logging
+except Exception:
+    logging = None
+
 
 class MessagingEndpoint:
     """
@@ -17,6 +22,12 @@ class MessagingEndpoint:
         self.transport = transport
         self.codec = codec or MessageCodec()
         self.registry = registry or ServiceRegistry()
+        self._logger = None
+        if logging is not None:
+            try:
+                self._logger = logging.getLogger("dnet.messaging.endpoint")
+            except Exception:
+                self._logger = None
 
     def send_advertise(self, peer_id, profile_hash, service_ids):
         payload = self.codec.encode_advertise(self.node_id, profile_hash, service_ids)
@@ -48,7 +59,13 @@ class MessagingEndpoint:
             firmware=firmware,
             meta=meta,
         )
+        self._log_debug(
+            "send_profile node={} peer={} hash={} services={} bytes={}".format(
+                self.node_id, peer_id, profile_hash, len(services), len(payload)
+            )
+        )
         self.transport.send(peer_id, payload)
+        self._log_debug("send_profile dispatched peer={} bytes={}".format(peer_id, len(payload)))
         return payload
 
     def poll(self):
@@ -69,6 +86,12 @@ class MessagingEndpoint:
             self.registry.register_profile(message)
 
         return peer_id, message
+
+    def _log_debug(self, msg):
+        if self._logger is not None and hasattr(self._logger, "debug"):
+            self._logger.debug(msg)
+            return
+        print("DEBUG MessagingEndpoint: {}".format(msg))
 
     def find_providers(self, service_id):
         return self.registry.find_service(service_id)
