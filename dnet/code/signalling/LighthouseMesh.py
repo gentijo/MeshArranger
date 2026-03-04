@@ -71,15 +71,16 @@ class LighthouseMesh:
         self.wlan_sta = network.WLAN(network.STA_IF)
         self.wlan_sta.active(True)
         self._configure_wifi_for_espnow(self._channel)
-        self.wlan_sta.disconnect()
 
         # Canonical node id is the local MAC as lowercase hex.
         self.wlan_mac = self.wlan_sta.config("mac")
         self.node_id = self.mac_to_node_id(self.wlan_mac)
+        self._effective_channel = self._read_wifi_channel()
+        self._peer_channel = self._effective_channel if isinstance(self._effective_channel, int) else 0
         self._log_info(
             "mesh init node_id={} mac={}".format(self.node_id, self.mac_to_node_id(self.wlan_mac))
         )
-        self._log_info("mesh wifi channel={}".format(self._read_wifi_channel()))
+        self._log_info("mesh wifi channel={} peer_channel={}".format(self._effective_channel, self._peer_channel))
         self._log_debug("mesh init debug={} peers_arg={}".format(self._debug, peers))
 
         # ESP-NOW transport endpoint.
@@ -121,10 +122,23 @@ class LighthouseMesh:
         if mac in self._known_peers:
             return
         try:
-            self.espnow.add_peer(mac)
+            self.espnow.add_peer(mac, channel=self._peer_channel, ifidx=0)
+            self._log_debug(
+                "peer add params peer={} channel={} ifidx=0".format(
+                    self.mac_to_node_id(mac), self._peer_channel
+                )
+            )
         except Exception as exc:
-            self._log_error("add_peer failed peer={} err={}".format(peer, exc))
-            raise
+            self._log_error(
+                "add_peer(channel) failed peer={} channel={} err={}".format(
+                    peer, self._peer_channel, exc
+                )
+            )
+            try:
+                self.espnow.add_peer(mac)
+            except Exception as inner_exc:
+                self._log_error("add_peer failed peer={} err={}".format(peer, inner_exc))
+                raise
         self._known_peers.add(mac)
         self._log_debug("peer added {}".format(self.mac_to_node_id(mac)))
 
@@ -475,6 +489,11 @@ class LighthouseMesh:
 
     def _configure_wifi_for_espnow(self, channel):
         """Set deterministic STA settings used by ESP-NOW."""
+        try:
+            # Keep STA detached from AP before channel operations.
+            self.wlan_sta.disconnect()
+        except Exception:
+            pass
         try:
             pm_none = getattr(self.wlan_sta, "PM_NONE", None)
             if pm_none is None:
