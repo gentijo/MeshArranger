@@ -1,4 +1,5 @@
 import json
+print("dnet_gtwy: RestInterface module imported")
 import wifi
 
 from MicroPyServer import MicroPyServer
@@ -10,6 +11,7 @@ from dnet.signalling.LighthouseMesh import LighthouseMesh
 
 class RestInterface:
     def __init__(self, mesh=None, endpoint=None, channel=6, host="0.0.0.0", port=80):
+        print("RestInterface: __init__ host={} port={} channel={}".format(host, port, channel))
         self.host = host
         self.port = int(port)
         self.mesh = mesh or LighthouseMesh(channel=channel)

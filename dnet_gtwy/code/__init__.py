@@ -1,5 +1,6 @@
 import gc
 gc.enable()
+print("dnet_gtwy: __init__ loading")
 
 try:
     import MicroPyServer
@@ -28,6 +29,7 @@ except:
 from dnet.signalling.LighthouseMesh import LighthouseMesh
 from dnet.signalling.Payload import Payload
 from .RestInterface import RestInterface
+print("dnet_gtwy: RestInterface ready")
 
 __all__ = [
     "LighthouseMesh",
