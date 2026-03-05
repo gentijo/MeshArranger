@@ -20,6 +20,7 @@ class RestInterface:
         self.setup_routes()
 
     def setup_routes(self):
+        print("RestInterface: registering routes")
         self.server.add_route("/health", self.get_health, "GET")
         self.server.add_route("/status", self.get_espnow_status, "GET")
         self.server.add_route("/espnow/status", self.get_espnow_status, "GET")
@@ -37,9 +38,16 @@ class RestInterface:
                 break
 
     def get_health(self, _request):
+        print("RestInterface: incoming GET /health")
         self._send_json_response({"status": "ok", "service": "dnet_gtwy"})
 
-    def get_espnow_status(self, _request):
+    def get_espnow_status(self, request):
+        print("RestInterface: incoming GET /espnow/status or /status")
+        if request is not None:
+            try:
+                print("RestInterface: request head={}".format(str(request).split("\r\n", 1)[0]))
+            except Exception:
+                pass
         try:
             self._drain_pending_messages()
             stats = self.mesh.get_stats()
@@ -61,7 +69,13 @@ class RestInterface:
         except Exception as exc:
             self._send_json_response({"status": "error", "error": str(exc)}, http_code=500)
 
-    def get_nodes(self, _request):
+    def get_nodes(self, request):
+        print("RestInterface: incoming GET /nodes")
+        if request is not None:
+            try:
+                print("RestInterface: request head={}".format(str(request).split("\r\n", 1)[0]))
+            except Exception:
+                pass
         try:
             self._drain_pending_messages()
             nodes = self.endpoint.registry.all_nodes()
