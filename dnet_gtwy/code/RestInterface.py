@@ -1,4 +1,5 @@
 import json
+import wifi
 
 from MicroPyServer import MicroPyServer
 
