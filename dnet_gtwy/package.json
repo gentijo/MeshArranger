@@ -2,7 +2,7 @@
   "name": "DistNet",
   "urls": [
     ["dnet_gtwy/__init__.py", "github:WidgetMesh/MeshArranger/dnet_gtwy/__init__.py"],
-    ["dnet_gtwy/rest_server.py", "github:WidgetMesh/MeshArranger/dnet_gtwy/app/rest_server.py"]  
+    ["dnet_gtwy/RestInterface.py", "github:WidgetMesh/MeshArranger/dnet_gtwy/app/RestInterface.py"]  
   ],
   "version": "0.7"
 }

@@ -1,4 +1,4 @@
-from . import schema
+from .schema import Schema
 from .codec import MessageCodec
 from .registry import ServiceRegistry
 
@@ -61,11 +61,11 @@ class MessagingEndpoint:
             return None, None
 
         message = self.codec.decode(payload)
-        mtype = message[schema.F_TYPE]
+        mtype = message[Schema.F_TYPE]
 
-        if mtype == schema.TYPE_ADVERTISE:
+        if mtype == Schema.TYPE_ADVERTISE:
             self.registry.register_advertisement(message)
-        elif mtype == schema.TYPE_PROFILE:
+        elif mtype == Schema.TYPE_PROFILE:
             self.registry.register_profile(message)
 
         return peer_id, message

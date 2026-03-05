@@ -1,9 +1,9 @@
 import json
 
-from . import schema
+from .schema import Schema
 
 
-MAX_SHORT_PACKET_BYTES = schema.SHORT_PACKET_MAX_BYTES
+MAX_SHORT_PACKET_BYTES = Schema.SHORT_PACKET_MAX_BYTES
 
 
 class MessageValidationError(ValueError):
@@ -16,11 +16,11 @@ class MessageCodec:
 
     def encode_advertise(self, node_id, profile_hash, service_ids):
         msg = {
-            schema.F_VERSION: schema.PROTOCOL_VERSION,
-            schema.F_TYPE: schema.TYPE_ADVERTISE,
-            schema.F_NODE_ID: str(node_id),
-            schema.F_PROFILE_HASH: str(profile_hash),
-            schema.F_SERVICES: list(service_ids),
+            Schema.F_VERSION: Schema.PROTOCOL_VERSION,
+            Schema.F_TYPE: Schema.TYPE_ADVERTISE,
+            Schema.F_NODE_ID: str(node_id),
+            Schema.F_PROFILE_HASH: str(profile_hash),
+            Schema.F_SERVICES: list(service_ids),
         }
         self.validate(msg)
         encoded = self.dumps(msg)
@@ -34,31 +34,31 @@ class MessageCodec:
 
     def encode_query(self, node_id, service_id):
         msg = {
-            schema.F_VERSION: schema.PROTOCOL_VERSION,
-            schema.F_TYPE: schema.TYPE_QUERY,
-            schema.F_NODE_ID: str(node_id),
-            schema.F_SERVICE_ID: int(service_id),
+            Schema.F_VERSION: Schema.PROTOCOL_VERSION,
+            Schema.F_TYPE: Schema.TYPE_QUERY,
+            Schema.F_NODE_ID: str(node_id),
+            Schema.F_SERVICE_ID: int(service_id),
         }
         self.validate(msg)
         return self.dumps(msg)
 
     def encode_query_result(self, node_id, service_id, providers):
         msg = {
-            schema.F_VERSION: schema.PROTOCOL_VERSION,
-            schema.F_TYPE: schema.TYPE_QUERY_RESULT,
-            schema.F_NODE_ID: str(node_id),
-            schema.F_SERVICE_ID: int(service_id),
-            schema.F_PROVIDERS: [str(p) for p in providers],
+            Schema.F_VERSION: Schema.PROTOCOL_VERSION,
+            Schema.F_TYPE: Schema.TYPE_QUERY_RESULT,
+            Schema.F_NODE_ID: str(node_id),
+            Schema.F_SERVICE_ID: int(service_id),
+            Schema.F_PROVIDERS: [str(p) for p in providers],
         }
         self.validate(msg)
         return self.dumps(msg)
 
     def encode_get_profile(self, node_id, target_node_id):
         msg = {
-            schema.F_VERSION: schema.PROTOCOL_VERSION,
-            schema.F_TYPE: schema.TYPE_GET_PROFILE,
-            schema.F_NODE_ID: str(node_id),
-            schema.F_TARGET: str(target_node_id),
+            Schema.F_VERSION: Schema.PROTOCOL_VERSION,
+            Schema.F_TYPE: Schema.TYPE_GET_PROFILE,
+            Schema.F_NODE_ID: str(node_id),
+            Schema.F_TARGET: str(target_node_id),
         }
         self.validate(msg)
         return self.dumps(msg)
@@ -74,22 +74,22 @@ class MessageCodec:
         meta=None,
     ):
         msg = {
-            schema.F_VERSION: schema.PROTOCOL_VERSION,
-            schema.F_TYPE: schema.TYPE_PROFILE,
-            schema.F_NODE_ID: str(node_id),
-            schema.F_PROFILE_HASH: str(profile_hash),
-            schema.F_SERVICES: list(services),
+            Schema.F_VERSION: Schema.PROTOCOL_VERSION,
+            Schema.F_TYPE: Schema.TYPE_PROFILE,
+            Schema.F_NODE_ID: str(node_id),
+            Schema.F_PROFILE_HASH: str(profile_hash),
+            Schema.F_SERVICES: list(services),
         }
         if name is not None:
-            msg[schema.F_NODE_NAME] = str(name)
+            msg[Schema.F_NODE_NAME] = str(name)
         if role is not None:
-            msg[schema.F_ROLE] = str(role)
+            msg[Schema.F_ROLE] = str(role)
         if firmware is not None:
-            msg[schema.F_FIRMWARE] = str(firmware)
+            msg[Schema.F_FIRMWARE] = str(firmware)
         if meta is not None:
             if not isinstance(meta, dict):
                 raise MessageValidationError("meta must be a dict")
-            msg[schema.F_META] = meta
+            msg[Schema.F_META] = meta
         self.validate(msg)
         return self.dumps(msg)
 
@@ -109,99 +109,99 @@ class MessageCodec:
             raise MessageValidationError("message must be a JSON object")
 
         self._validate_common(msg)
-        mtype = msg[schema.F_TYPE]
-        if mtype == schema.TYPE_ADVERTISE:
+        mtype = msg[Schema.F_TYPE]
+        if mtype == Schema.TYPE_ADVERTISE:
             self._validate_advertise(msg)
-        elif mtype == schema.TYPE_QUERY:
+        elif mtype == Schema.TYPE_QUERY:
             self._validate_query(msg)
-        elif mtype == schema.TYPE_QUERY_RESULT:
+        elif mtype == Schema.TYPE_QUERY_RESULT:
             self._validate_query_result(msg)
-        elif mtype == schema.TYPE_GET_PROFILE:
+        elif mtype == Schema.TYPE_GET_PROFILE:
             self._validate_get_profile(msg)
-        elif mtype == schema.TYPE_PROFILE:
+        elif mtype == Schema.TYPE_PROFILE:
             self._validate_profile(msg)
         else:
             raise MessageValidationError("unsupported message type: {}".format(mtype))
 
     def _validate_common(self, msg):
-        for key in (schema.F_VERSION, schema.F_TYPE, schema.F_NODE_ID):
+        for key in (Schema.F_VERSION, Schema.F_TYPE, Schema.F_NODE_ID):
             if key not in msg:
                 raise MessageValidationError("missing field '{}'".format(key))
-        if msg[schema.F_VERSION] != schema.PROTOCOL_VERSION:
+        if msg[Schema.F_VERSION] != Schema.PROTOCOL_VERSION:
             raise MessageValidationError(
-                "unsupported version: {}".format(msg[schema.F_VERSION])
+                "unsupported version: {}".format(msg[Schema.F_VERSION])
             )
-        if not isinstance(msg[schema.F_TYPE], str):
-            raise MessageValidationError("field '{}' must be a string".format(schema.F_TYPE))
-        if not isinstance(msg[schema.F_NODE_ID], str) or not msg[schema.F_NODE_ID]:
+        if not isinstance(msg[Schema.F_TYPE], str):
+            raise MessageValidationError("field '{}' must be a string".format(Schema.F_TYPE))
+        if not isinstance(msg[Schema.F_NODE_ID], str) or not msg[Schema.F_NODE_ID]:
             raise MessageValidationError(
-                "field '{}' must be a non-empty string".format(schema.F_NODE_ID)
+                "field '{}' must be a non-empty string".format(Schema.F_NODE_ID)
             )
 
     def _validate_advertise(self, msg):
-        for key in schema.SHORT_ADVERTISE_SCHEMA["required"]:
+        for key in Schema.SHORT_ADVERTISE_SCHEMA["required"]:
             if key not in msg:
                 raise MessageValidationError("missing field '{}'".format(key))
-        self._validate_service_ids(msg[schema.F_SERVICES])
-        if not isinstance(msg[schema.F_PROFILE_HASH], str):
+        self._validate_service_ids(msg[Schema.F_SERVICES])
+        if not isinstance(msg[Schema.F_PROFILE_HASH], str):
             raise MessageValidationError(
-                "field '{}' must be a string".format(schema.F_PROFILE_HASH)
+                "field '{}' must be a string".format(Schema.F_PROFILE_HASH)
             )
 
     def _validate_query(self, msg):
-        for key in schema.QUERY_SCHEMA["required"]:
+        for key in Schema.QUERY_SCHEMA["required"]:
             if key not in msg:
                 raise MessageValidationError("missing field '{}'".format(key))
-        self._validate_service_id(msg[schema.F_SERVICE_ID])
+        self._validate_service_id(msg[Schema.F_SERVICE_ID])
 
     def _validate_query_result(self, msg):
-        for key in schema.QUERY_RESULT_SCHEMA["required"]:
+        for key in Schema.QUERY_RESULT_SCHEMA["required"]:
             if key not in msg:
                 raise MessageValidationError("missing field '{}'".format(key))
-        self._validate_service_id(msg[schema.F_SERVICE_ID])
-        providers = msg[schema.F_PROVIDERS]
+        self._validate_service_id(msg[Schema.F_SERVICE_ID])
+        providers = msg[Schema.F_PROVIDERS]
         if not isinstance(providers, list):
             raise MessageValidationError(
-                "field '{}' must be an array".format(schema.F_PROVIDERS)
+                "field '{}' must be an array".format(Schema.F_PROVIDERS)
             )
         for provider in providers:
             if not isinstance(provider, str) or not provider:
                 raise MessageValidationError("provider ids must be non-empty strings")
 
     def _validate_get_profile(self, msg):
-        for key in schema.GET_PROFILE_SCHEMA["required"]:
+        for key in Schema.GET_PROFILE_SCHEMA["required"]:
             if key not in msg:
                 raise MessageValidationError("missing field '{}'".format(key))
-        if not isinstance(msg[schema.F_TARGET], str) or not msg[schema.F_TARGET]:
-            raise MessageValidationError("field '{}' must be a non-empty string".format(schema.F_TARGET))
+        if not isinstance(msg[Schema.F_TARGET], str) or not msg[Schema.F_TARGET]:
+            raise MessageValidationError("field '{}' must be a non-empty string".format(Schema.F_TARGET))
 
     def _validate_profile(self, msg):
-        for key in schema.PROFILE_SCHEMA["required"]:
+        for key in Schema.PROFILE_SCHEMA["required"]:
             if key not in msg:
                 raise MessageValidationError("missing field '{}'".format(key))
-        if not isinstance(msg[schema.F_PROFILE_HASH], str):
+        if not isinstance(msg[Schema.F_PROFILE_HASH], str):
             raise MessageValidationError(
-                "field '{}' must be a string".format(schema.F_PROFILE_HASH)
+                "field '{}' must be a string".format(Schema.F_PROFILE_HASH)
             )
-        services = msg[schema.F_SERVICES]
+        services = msg[Schema.F_SERVICES]
         if not isinstance(services, list):
             raise MessageValidationError(
-                "field '{}' must be an array".format(schema.F_SERVICES)
+                "field '{}' must be an array".format(Schema.F_SERVICES)
             )
         for entry in services:
             if not isinstance(entry, dict):
                 raise MessageValidationError(
                     "profile services must be objects with details"
                 )
-            if schema.F_SERVICE_ID not in entry:
+            if Schema.F_SERVICE_ID not in entry:
                 raise MessageValidationError(
-                    "profile service entry missing '{}'".format(schema.F_SERVICE_ID)
+                    "profile service entry missing '{}'".format(Schema.F_SERVICE_ID)
                 )
-            self._validate_service_id(entry[schema.F_SERVICE_ID])
+            self._validate_service_id(entry[Schema.F_SERVICE_ID])
 
     def _validate_service_ids(self, service_ids):
         if not isinstance(service_ids, list) or not service_ids:
-            raise MessageValidationError("field '{}' must be a non-empty array".format(schema.F_SERVICES))
+            raise MessageValidationError("field '{}' must be a non-empty array".format(Schema.F_SERVICES))
         for value in service_ids:
             self._validate_service_id(value)
 

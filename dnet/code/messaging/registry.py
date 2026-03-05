@@ -1,6 +1,6 @@
 import time
 
-from . import schema
+from .schema import Schema
 
 
 class ServiceRegistry:
@@ -14,9 +14,9 @@ class ServiceRegistry:
         self._service_to_nodes = {}
 
     def register_advertisement(self, msg, seen_at_ms=None):
-        node_id = msg[schema.F_NODE_ID]
-        profile_hash = msg[schema.F_PROFILE_HASH]
-        services = msg[schema.F_SERVICES]
+        node_id = msg[Schema.F_NODE_ID]
+        profile_hash = msg[Schema.F_PROFILE_HASH]
+        services = msg[Schema.F_SERVICES]
         if seen_at_ms is None:
             seen_at_ms = self._now_ms()
 
@@ -33,20 +33,20 @@ class ServiceRegistry:
             self._service_to_nodes[service_id] = providers
 
     def register_profile(self, msg, seen_at_ms=None):
-        node_id = msg[schema.F_NODE_ID]
+        node_id = msg[Schema.F_NODE_ID]
         if seen_at_ms is None:
             seen_at_ms = self._now_ms()
 
         node = self._nodes.get(node_id, {})
         node["node_id"] = node_id
-        node["profile_hash"] = msg[schema.F_PROFILE_HASH]
+        node["profile_hash"] = msg[Schema.F_PROFILE_HASH]
         node["last_seen_ms"] = int(seen_at_ms)
-        node["name"] = msg.get(schema.F_NODE_NAME)
-        node["role"] = msg.get(schema.F_ROLE)
-        node["firmware"] = msg.get(schema.F_FIRMWARE)
-        node["meta"] = msg.get(schema.F_META, {})
-        node["services"] = list(msg[schema.F_SERVICES])
-        node["service_ids"] = [entry[schema.F_SERVICE_ID] for entry in node["services"]]
+        node["name"] = msg.get(Schema.F_NODE_NAME)
+        node["role"] = msg.get(Schema.F_ROLE)
+        node["firmware"] = msg.get(Schema.F_FIRMWARE)
+        node["meta"] = msg.get(Schema.F_META, {})
+        node["services"] = list(msg[Schema.F_SERVICES])
+        node["service_ids"] = [entry[Schema.F_SERVICE_ID] for entry in node["services"]]
         self._nodes[node_id] = node
 
         for service_id in node["service_ids"]:

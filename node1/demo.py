@@ -11,6 +11,7 @@ except Exception:
     logging = None
 
 from dnet.messaging import MessagingEndpoint
+from dnet.messaging import Schema
 from dnet.signalling.LighthouseMesh import LighthouseMesh
 
 
@@ -46,12 +47,12 @@ def load_profile(path=PROFILE_PATH):
 def send_profile_broadcast(endpoint, profile):
     payload = endpoint.send_profile(
         peer_id="broadcast",
-        profile_hash=profile["h"],
-        services=profile["s"],
-        name=profile.get("name"),
-        role=profile.get("role"),
-        firmware=profile.get("fw"),
-        meta=profile.get("meta"),
+        profile_hash=profile[Schema.F_PROFILE_HASH],
+        services=profile[Schema.F_SERVICES],
+        name=profile.get(Schema.F_NODE_NAME),
+        role=profile.get(Schema.F_ROLE),
+        firmware=profile.get(Schema.F_FIRMWARE),
+        meta=profile.get(Schema.F_META),
     )
     _log_info("broadcasted profile ({} bytes)".format(len(payload)))
 
@@ -63,7 +64,7 @@ async def broadcast_loop(endpoint, profile):
 
 
 def on_message(peer_id, message):
-    if message.get("t") != "p":
+    if message.get(Schema.F_TYPE) != Schema.TYPE_PROFILE:
         return
     _log_info("profile from {}: {}".format(peer_id, message))
 
