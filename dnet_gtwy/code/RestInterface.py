@@ -4,6 +4,11 @@ try:
     import uasyncio as asyncio
 except Exception:
     import asyncio
+
+try:
+    import utime as _time
+except Exception:
+    import time as _time
     
 from MicroPyServer import MicroPyServer
 
@@ -20,6 +25,9 @@ class RestInterface:
         self.port = int(port)
         self.mesh = mesh or LighthouseMesh(channel=self.channel)
         self._ensure_mesh_channel()
+        self._message_log = []
+        self._max_message_log = 250
+        self._message_seq = 0
         if endpoint is None:
             transport = self.mesh.create_transport(default_peer="broadcast")
             endpoint = MessagingEndpoint(node_id=self.mesh.node_id, transport=transport)
@@ -88,6 +96,7 @@ class RestInterface:
         self.server.add_route("/status", self.get_espnow_status, "GET")
         self.server.add_route("/espnow/status", self.get_espnow_status, "GET")
         self.server.add_route("/nodes", self.get_nodes, "GET")
+        self.server.add_route("/messages", self.get_messages, "GET")
 
     def _drain_pending_messages(self, max_messages=32):
         # Keep registry fresh before servicing read endpoints.
@@ -99,6 +108,80 @@ class RestInterface:
                 continue
             if message is None:
                 break
+
+    def _now_ms(self):
+        try:
+            return _time.ticks_ms()
+        except Exception:
+            return int(_time.time() * 1000)
+
+    def _coerce_message(self, message):
+        try:
+            return message.copy()
+        except Exception:
+            pass
+        try:
+            return str(message)
+        except Exception:
+            return repr(message)
+
+    def _capture_message(self, peer_id, message):
+        self._message_seq += 1
+        entry = {
+            "id": self._message_seq,
+            "ts_ms": self._now_ms(),
+            "peer_id": peer_id,
+            "message": self._coerce_message(message),
+        }
+        self._message_log.append(entry)
+        if len(self._message_log) > self._max_message_log:
+            self._message_log.pop(0)
+
+    def _on_mesh_message(self, peer_id, message):
+        """Capture every inbound message and optionally keep app-level processing narrow."""
+        try:
+            self._capture_message(peer_id, message)
+        except Exception as exc:
+            print("RestInterface: message capture failed ({})".format(exc))
+
+        try:
+            msg_type = message.get(Schema.F_TYPE)
+        except Exception:
+            return
+
+        if msg_type in (
+            Schema.TYPE_PROFILE,
+            Schema.TYPE_ADVERTISE,
+        ):
+            return
+
+        # Other message types are currently not consumed by gateway logic and are intentionally ignored.
+        return
+
+    def get_messages(self, _request):
+        try:
+            self._drain_pending_messages(max_messages=128)
+        except Exception as exc:
+            print("RestInterface: message drain failed in /messages ({})".format(exc))
+
+        messages = list(self._message_log)
+        self._message_log = []
+        self._send_json_response({"status": "ok", "messages": messages})
+
+    def _on_mesh_message(self, peer_id, message):
+        """Discard non-essential inbound packets while keeping registry updates intact."""
+        try:
+            msg_type = message.get(Schema.F_TYPE)
+        except Exception:
+            return
+
+        # Gateway currently uses registry updates from profile/advertise packets
+        # only. Everything else can be ignored to keep RX queue clear.
+        if msg_type in (
+            Schema.TYPE_PROFILE,
+            Schema.TYPE_ADVERTISE,
+        ):
+            return
 
     def get_health(self, _request):
         print("RestInterface: incoming GET /health")
@@ -186,7 +269,9 @@ class RestInterface:
     def start(self):
         self._mesh_task = None
         try:
-            self._mesh_task = asyncio.create_task(self.mesh.run(endpoint=self.endpoint))
+            self._mesh_task = asyncio.create_task(
+                self.mesh.run(endpoint=self.endpoint, on_message=self._on_mesh_message)
+            )
             print("RestInterface: mesh background task started via asyncio.create_task()")
         except Exception as exc:
             print(
@@ -196,7 +281,9 @@ class RestInterface:
             )
             try:
                 loop = asyncio.get_event_loop()
-                self._mesh_task = loop.create_task(self.mesh.run(endpoint=self.endpoint))
+                self._mesh_task = loop.create_task(
+                    self.mesh.run(endpoint=self.endpoint, on_message=self._on_mesh_message)
+                )
                 print("RestInterface: mesh background task started via event loop")
             except Exception as fallback_exc:
                 print(
