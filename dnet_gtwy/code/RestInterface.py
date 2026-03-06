@@ -45,6 +45,22 @@ class RestInterface:
 
         if current_channel_int == requested_channel:
             return
+
+        sta_connected = False
+        try:
+            sta_connected = bool(self.mesh.wlan_sta.isconnected())
+        except Exception:
+            pass
+
+        if sta_connected:
+            print(
+                "RestInterface: STA connected on channel {} while requested channel {}. "
+                "Skipping mesh channel switch to avoid breaking network reachability.".format(
+                    current_channel, requested_channel
+                )
+            )
+            return
+
         try:
             print(
                 "RestInterface: forcing mesh channel {} (current {})".format(
@@ -56,6 +72,7 @@ class RestInterface:
                 configure(requested_channel)
             if hasattr(self.mesh, "_peer_channel"):
                 self.mesh._peer_channel = requested_channel
+                self.mesh._effective_channel = requested_channel
             print(
                 "RestInterface: mesh channel set to {}".format(requested_channel)
             )
@@ -196,7 +213,7 @@ class RestInterface:
         )
         print("GET /health")
         print("GET /status")
-j        print("GET /nodes")
+        print("GET /nodes")
         try:
             # Prefer explicit bind when supported by the server implementation.
             self.server.start(self.host, self.port)

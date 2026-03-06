@@ -576,17 +576,17 @@ class LighthouseMesh:
                 )
                 return
             self._log_info(
-                "wifi STA connected on channel {}; switching to requested channel {}".format(
-                    current_channel_int if current_channel_int is not None else current_channel,
+                "wifi STA connected on channel {}; keeping existing channel".format(
+                    current_channel_int if current_channel_int is not None else current_channel
+                )
+            )
+            self._log_error(
+                "Refusing channel switch while STA is connected to keep network reachable. "
+                "Set up STA on requested channel {} before startup or pass an unconnected mesh".format(
                     requested_channel,
                 )
             )
-            try:
-                self.wlan_sta.disconnect()
-                self.wlan_sta.active(False)
-                self.wlan_sta.active(True)
-            except Exception as exc:
-                self._log_error("wifi disconnect/restart failed channel switch err={}".format(exc))
+            return
 
         try:
             pm_none = getattr(self.wlan_sta, "PM_NONE", None)
