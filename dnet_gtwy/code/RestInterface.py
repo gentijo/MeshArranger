@@ -24,6 +24,7 @@ class RestInterface:
             endpoint = MessagingEndpoint(node_id=self.mesh.node_id, transport=transport)
         self.endpoint = endpoint
         self.server = MicroPyServer()
+        self._mesh_task = None
         self.setup_routes()
 
     def setup_routes(self):
@@ -128,9 +129,27 @@ class RestInterface:
         self.server.send(response)
 
     def start(self):
-        
-        asyncio.run(self.mesh.run())
-        
+        self._mesh_task = None
+        try:
+            self._mesh_task = asyncio.create_task(self.mesh.run())
+            print("RestInterface: mesh background task started via asyncio.create_task()")
+        except Exception as exc:
+            print(
+                "RestInterface: create_task failed ({}), trying loop.create_task fallback".format(
+                    exc
+                )
+            )
+            try:
+                loop = asyncio.get_event_loop()
+                self._mesh_task = loop.create_task(self.mesh.run())
+                print("RestInterface: mesh background task started via event loop")
+            except Exception as fallback_exc:
+                print(
+                    "RestInterface: unable to start mesh in background task ({})".format(
+                        fallback_exc
+                    )
+                )
+
         print(
             "Gateway REST server starting on {}:{} ...".format(
                 self.host, self.port
@@ -146,5 +165,35 @@ class RestInterface:
         except TypeError:
             try:
                 self.server.start(port=self.port)
-            except TypeError:
+        except TypeError:
                 self.server.start()
+
+    def stop(self):
+        stopped = []
+        if self._mesh_task is not None:
+            try:
+                self._mesh_task.cancel()
+                stopped.append("mesh_task")
+                print("RestInterface: mesh background task cancelled")
+            except Exception as exc:
+                print("RestInterface: mesh task cancel failed ({})".format(exc))
+            self._mesh_task = None
+        else:
+            print("RestInterface: no active mesh task to stop")
+
+        if hasattr(self.server, "stop"):
+            try:
+                self.server.stop()
+                stopped.append("server")
+            except Exception as exc:
+                print("RestInterface: server stop failed ({})".format(exc))
+        elif hasattr(self.server, "close"):
+            try:
+                self.server.close()
+                stopped.append("server")
+            except Exception as exc:
+                print("RestInterface: server close failed ({})".format(exc))
+        else:
+            print("RestInterface: server stop method not available")
+
+        print("RestInterface: stop complete for {}".format(", ".join(stopped) if stopped else "nothing"))
