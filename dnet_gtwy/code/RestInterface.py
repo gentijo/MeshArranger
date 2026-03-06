@@ -1,6 +1,5 @@
 import json
 print("dnet_gtwy: RestInterface module imported")
-import wifi
 try:
     import uasyncio as asyncio
 except Exception:
@@ -205,6 +204,15 @@ class RestInterface:
                         fallback_exc
                     )
                 )
+        try:
+            import wifi  # noqa: F401
+            import network
+            if network is not None and hasattr(network, "WLAN"):
+                print("RestInterface: wifi module loaded and WLAN available")
+            else:
+                print("RestInterface: wifi module loaded; WLAN not available in this runtime")
+        except Exception as exc:
+            print("RestInterface: wifi import deferred-start skipped/failed ({})".format(exc))
 
         print(
             "Gateway REST server starting on {}:{} ...".format(
