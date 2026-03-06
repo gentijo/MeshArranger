@@ -94,6 +94,18 @@
         cursor: pointer;
       }
 
+      .toolbar-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        flex-wrap: wrap;
+      }
+
+      .version-line {
+        margin-top: 6px;
+        color: #a0adce;
+      }
+
       .grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -167,6 +179,11 @@
 
       .muted {
         color: var(--muted);
+      }
+
+      .error {
+        color: var(--bad);
+        margin-top: 6px;
       }
 
       @media (max-width: 900px) {
@@ -263,7 +280,7 @@
       }
 
       function App() {
-        const initialGateway = normalizeGateway(localStorage.getItem('gtwyGateway') || '192.168.137.2:8080')
+        const initialGateway = normalizeGateway(localStorage.getItem('gtwyGateway') || '192.168.8.195:80')
 
         const [gatewayInput, setGatewayInput] = useState(initialGateway)
         const [gateway, setGateway] = useState(initialGateway)
@@ -272,18 +289,46 @@
         const [messages, setMessages] = useState([])
         const [connected, setConnected] = useState(false)
         const [isSaving, setIsSaving] = useState(false)
+        const [uiVersion, setUiVersion] = useState('unknown')
+        const [gatewayVersion, setGatewayVersion] = useState('unknown')
+        const [message, setMessage] = useState('')
 
         useEffect(() => {
           localStorage.setItem('gtwyGateway', gateway)
+          setMessage('Connecting...')
           const source = new EventSource(`/api/events?gateway=${encodeURIComponent(gateway)}`)
+
+          const refreshVersions = (gatewayVersionPayload) => {
+            if (gatewayVersionPayload && gatewayVersionPayload.gateway) {
+              const g = gatewayVersionPayload.gateway
+              setGatewayVersion(g.version || 'unknown')
+            }
+
+            if (gatewayVersionPayload && gatewayVersionPayload.ui) {
+              setUiVersion(gatewayVersionPayload.ui.version || uiVersion)
+            }
+          }
+
+          const onWelcome = (ev) => {
+            setMessage('SSE welcome received')
+            try {
+              const payload = JSON.parse(ev.data)
+              setUiVersion(payload.ui_version || 'unknown')
+            } catch (_err) {
+              // keep existing uiVersion
+            }
+            setIsSaving(false)
+          }
 
           const onStatus = (ev) => {
             try {
-              setStatus(JSON.parse(ev.data))
+              const payload = JSON.parse(ev.data)
+              setStatus(payload)
             } catch (_err) {
               setStatus({ status: 'invalid_status_payload' })
             }
             setConnected(true)
+            setMessage('Connected to gateway via SSE')
             setIsSaving(false)
           }
 
@@ -305,23 +350,49 @@
             }
           }
 
+          const onVersion = (ev) => {
+            try {
+              const payload = JSON.parse(ev.data)
+              setGatewayVersion(payload && payload.gateway ? payload.gateway.version : gatewayVersion)
+              if (payload && payload.ui && payload.ui.version) {
+                setUiVersion(payload.ui.version)
+              }
+              refreshVersions(payload)
+            } catch (_err) {
+              // ignore
+            }
+          }
+
+          const onError = () => {
+            setConnected(false)
+            setMessage('SSE connection error. Check gateway endpoint and WebUI logs.')
+          }
+
+          const onOpen = () => {
+            // fetch versions again after connection; this path does not block the stream
+            fetch(`/api/version?gateway=${encodeURIComponent(gateway)}`)
+              .then((res) => res.ok ? res.json() : Promise.reject(new Error('version endpoint unreachable')))
+              .then((payload) => refreshVersions(payload))
+              .catch(() => {
+                setGatewayVersion('unreachable')
+              })
+          }
+
+          source.addEventListener('welcome', onWelcome)
           source.addEventListener('status', onStatus)
           source.addEventListener('nodes', onNodes)
           source.addEventListener('message', onMessage)
-
-          source.addEventListener('welcome', () => {
-            setConnected(true)
-            setIsSaving(false)
-          })
-
-          source.addEventListener('error', () => {
-            setConnected(false)
-          })
+          source.addEventListener('version', onVersion)
+          source.addEventListener('error', onError)
+          source.onopen = onOpen
 
           return () => {
+            source.removeEventListener('welcome', onWelcome)
             source.removeEventListener('status', onStatus)
             source.removeEventListener('nodes', onNodes)
             source.removeEventListener('message', onMessage)
+            source.removeEventListener('version', onVersion)
+            source.removeEventListener('error', onError)
             source.close()
           }
         }, [gateway])
@@ -335,6 +406,7 @@
           setIsSaving(true)
           setMessages([])
           setGateway(target)
+          setMessage('Switching gateway target...')
         }
 
         return React.createElement('div', { className: 'page' },
@@ -353,7 +425,13 @@
                 }, connected ? 'SSE connected' : 'SSE disconnected')
               )
             ),
-            React.createElement('div', { className: connected ? 'status ok' : 'status bad' }, `Gateway: ${gateway}`)
+            React.createElement('div', { className: 'toolbar-meta' },
+              React.createElement('span', { className: 'version-line' }, `UI version: ${uiVersion}`),
+              React.createElement('span', { className: 'version-line' }, `Gateway version: ${gatewayVersion}`),
+              React.createElement('span', { className: 'version-line' }, `Target: ${gateway}`)
+            ),
+            React.createElement('div', { className: message ? 'status bad' : 'status ok' }, message),
+            React.createElement('div', { className: 'version-line' }, `Cache-busting disabled: /api responses are no-store`)
           ),
           React.createElement('div', { className: 'grid' },
             React.createElement(StatusPane, { status }),

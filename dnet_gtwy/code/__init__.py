@@ -1,6 +1,7 @@
 import gc
 gc.enable()
 print("dnet_gtwy: __init__ loading")
+__version__ = "0.124"
 
 try:
     import MicroPyServer

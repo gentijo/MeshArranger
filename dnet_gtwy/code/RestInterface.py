@@ -1,5 +1,6 @@
 import json
 print("dnet_gtwy: RestInterface module imported")
+VERSION = "0.124"
 try:
     import uasyncio as asyncio
 except Exception:
@@ -28,6 +29,7 @@ class RestInterface:
         self._message_log = []
         self._max_message_log = 250
         self._message_seq = 0
+        print("RestInterface: version={}".format(VERSION))
         if endpoint is None:
             transport = self.mesh.create_transport(default_peer="broadcast")
             endpoint = MessagingEndpoint(node_id=self.mesh.node_id, transport=transport)
@@ -97,6 +99,7 @@ class RestInterface:
         self.server.add_route("/espnow/status", self.get_espnow_status, "GET")
         self.server.add_route("/nodes", self.get_nodes, "GET")
         self.server.add_route("/messages", self.get_messages, "GET")
+        self.server.add_route("/version", self.get_version, "GET")
 
     def _drain_pending_messages(self, max_messages=32):
         # Keep registry fresh before servicing read endpoints.
@@ -159,6 +162,7 @@ class RestInterface:
         return
 
     def get_messages(self, _request):
+        print("RestInterface: incoming GET /messages")
         try:
             self._drain_pending_messages(max_messages=128)
         except Exception as exc:
@@ -166,26 +170,27 @@ class RestInterface:
 
         messages = list(self._message_log)
         self._message_log = []
-        self._send_json_response({"status": "ok", "messages": messages})
+        self._send_json_response({"status": "ok", "messages": messages, "version": VERSION})
 
-    def _on_mesh_message(self, peer_id, message):
-        """Discard non-essential inbound packets while keeping registry updates intact."""
-        try:
-            msg_type = message.get(Schema.F_TYPE)
-        except Exception:
-            return
-
-        # Gateway currently uses registry updates from profile/advertise packets
-        # only. Everything else can be ignored to keep RX queue clear.
-        if msg_type in (
-            Schema.TYPE_PROFILE,
-            Schema.TYPE_ADVERTISE,
-        ):
-            return
+    def get_version(self, request):
+        print("RestInterface: incoming GET /version")
+        if request is not None:
+            try:
+                print("RestInterface: request head={}".format(str(request).split("\r\n", 1)[0]))
+            except Exception:
+                pass
+        self._send_json_response(
+            {
+                "status": "ok",
+                "component": "dnet_gtwy",
+                "version": VERSION,
+                "service": "dnet_gtwy",
+            }
+        )
 
     def get_health(self, _request):
         print("RestInterface: incoming GET /health")
-        self._send_json_response({"status": "ok", "service": "dnet_gtwy"})
+        self._send_json_response({"status": "ok", "service": "dnet_gtwy", "version": VERSION})
 
     def get_espnow_status(self, request):
         print("RestInterface: incoming GET /espnow/status or /status")
@@ -201,6 +206,7 @@ class RestInterface:
                 "status": "ok",
                 "node_id": self.mesh.node_id,
                 "wifi_channel": self.mesh._read_wifi_channel(),
+                "gateway_version": VERSION,
                 "espnow": {
                     "tx_packets": int(stats[0]),
                     "tx_responses": int(stats[1]),
@@ -259,6 +265,7 @@ class RestInterface:
         response = json.dumps(data)
         reason = "OK" if int(http_code) < 400 else "ERROR"
         self.server.send("HTTP/1.1 {} {}\r\n".format(int(http_code), reason))
+        self.server.send("X-DistNet-Gateway-Version: {}\r\n".format(VERSION))
         self.server.send("Content-Type: application/json\r\n")
         self.server.send("Access-Control-Allow-Origin: *\r\n")
         self.server.send("Access-Control-Allow-Methods: GET, OPTIONS\r\n")
