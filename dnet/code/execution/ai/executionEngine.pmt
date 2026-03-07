@@ -1,0 +1,27 @@
+create a module that will be an event driven system, the basic object will be a Node. 
+A node knows
+    Its parent node  
+    linkage to node that will be the next node on failure 
+    liknage to the node that will be the next not on success
+
+A node can also point to a list of child nodes that represent a multi step operation
+    If a node has child nodes and the parellelExecution flag is set to true, 
+        A new thread will be created to execute the child nodes in parallel
+        The next node will use the existing thread and will always take the success route
+    If the parellelExecution flag is set to false, 
+        Then the child nodes will be executed in sequence before the next node is executed. 
+        The next node is the node that will be determined by the success/failure of the last node executed in the child sequence
+
+A node can be configured to publish an event before execution of the node
+A node can be configure to publish an event on either the success or failure of the nodes execution
+    The event published can be different for success or failure
+
+An event is a subscription based model that has a name and a dict of parameters.
+A node can publish a named event passing in the node instance as a parameter.
+
+Nodes can subscribe to an event as a action, on execution this node will pause the thread until the Event is published. 
+When an event is published, the waiting node will be assigned a thread to continue to execute.
+
+The paused node can consume multiple instances of the named event, if multiple events are published, 
+mutiple threads will be assigned to execute the node and it's children
+
