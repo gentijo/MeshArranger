@@ -1,0 +1,7 @@
+profile stored without any tokenazation
+
+when a profile is read, ot can be tokenized or not eithher way the ir state of the prodile will be reachable by either the tokenized name or the full name.
+
+field names will be const values, accessing a field name with a string bame should not be allowed
+
+
