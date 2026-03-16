@@ -1,0 +1,10 @@
+{
+  "name": "ednet-mip",
+  "version": "0.1.0",
+  "urls": [
+    ["ednet_mip/__init__.py", "github:WidgetMesh/MeshArranger/ednet_mip/__init__.py"],
+    ["ednet_mip/client.py", "github:WidgetMesh/MeshArranger/ednet_mip/client.py"],
+    ["ednet_mip/gateway.py", "github:WidgetMesh/MeshArranger/ednet_mip/gateway.py"],
+    ["ednet_mip/mesh_protocol.py", "github:WidgetMesh/MeshArranger/ednet_mip/mesh_protocol.py"]
+  ]
+}
